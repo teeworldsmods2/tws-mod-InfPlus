@@ -25,6 +25,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 
 	m_Authed = IServer::AUTHED_NO;
 
+	m_MapMenu = 0;
+	m_MapMenuItem = -1;
+	m_MapMenuTick = -1;
+	
 	m_PrevTuningParams = *pGameServer->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
@@ -356,4 +360,151 @@ const char* CPlayer::GetLanguage()
 void CPlayer::SetLanguage(const char* pLanguage)
 {
 	str_copy(m_aLanguage, pLanguage, sizeof(m_aLanguage));
+}
+
+/* INFECTION MODIFICATION START ***************************************/
+int CPlayer::GetClass()
+{
+	return m_class;
+}
+
+void CPlayer::SetClassSkin(int newClass, int State)
+{
+	switch(newClass)
+	{
+		case HUMANCLASS_LOOPER:
+			m_TeeInfos.m_UseCustomColor = 1;
+			str_copy(m_TeeInfos.m_SkinName, "bluekitty", sizeof(m_TeeInfos.m_SkinName));
+			m_TeeInfos.m_ColorBody = 255;
+			m_TeeInfos.m_ColorFeet = 0;
+			break;
+		case HUMANCLASS_MEDIC:
+			m_TeeInfos.m_UseCustomColor = 0;
+			str_copy(m_TeeInfos.m_SkinName, "twinbop", sizeof(m_TeeInfos.m_SkinName));
+			break;
+		case HUMANCLASS_HERO:
+			m_TeeInfos.m_UseCustomColor = 0;
+			str_copy(m_TeeInfos.m_SkinName, "redstripe", sizeof(m_TeeInfos.m_SkinName));
+			break;
+		case ZOMBIECLASS_BOOMER:
+			m_TeeInfos.m_UseCustomColor = 1;
+			str_copy(m_TeeInfos.m_SkinName, "saddo", sizeof(m_TeeInfos.m_SkinName));
+			m_TeeInfos.m_ColorBody = 3866368;
+			m_TeeInfos.m_ColorFeet = 65414;
+			break;
+		case ZOMBIECLASS_HUNTER:
+			m_TeeInfos.m_UseCustomColor = 1;
+			str_copy(m_TeeInfos.m_SkinName, "warpaint", sizeof(m_TeeInfos.m_SkinName));
+			m_TeeInfos.m_ColorBody = 3866368;
+			m_TeeInfos.m_ColorFeet = 65414;
+			break;
+		case ZOMBIECLASS_BAT:
+			m_TeeInfos.m_UseCustomColor = 1;
+			str_copy(m_TeeInfos.m_SkinName, "limekitty", sizeof(m_TeeInfos.m_SkinName));
+			m_TeeInfos.m_ColorBody = 2866368;
+			m_TeeInfos.m_ColorFeet = 3866368;
+			break;
+		case ZOMBIECLASS_SPIDER:
+			m_TeeInfos.m_UseCustomColor = 1;
+			str_copy(m_TeeInfos.m_SkinName, "pinky", sizeof(m_TeeInfos.m_SkinName));
+			m_TeeInfos.m_ColorBody = 3866368;
+			m_TeeInfos.m_ColorFeet = 65414;
+			break;
+		default:
+			m_TeeInfos.m_UseCustomColor = 0;
+			str_copy(m_TeeInfos.m_SkinName, "default", sizeof(m_TeeInfos.m_SkinName));
+			Server()->SetClientClan(GetCID(), "");
+	}
+}
+
+void CPlayer::SetClass(int newClass)
+{	
+	if(m_class == newClass)
+		return;
+	
+	if(newClass > START_HUMANCLASS && newClass < END_HUMANCLASS)
+	{
+		bool ClassFound = false;
+		for(unsigned int i=0; i<sizeof(m_LastHumanClasses)/sizeof(int); i++)
+		{
+			if(m_LastHumanClasses[i] == newClass)
+				ClassFound = true;
+		}
+		if(!ClassFound)
+		{
+			for(unsigned int i=0; i<sizeof(m_LastHumanClasses)/sizeof(int)-1; i++)
+			{
+				m_LastHumanClasses[i] = m_LastHumanClasses[i+1];
+			}
+			m_LastHumanClasses[sizeof(m_LastHumanClasses)/sizeof(int)-1] = newClass;
+		}
+	}
+	
+	m_class = newClass;
+	
+	SetClassSkin(newClass);
+	
+	if(m_pCharacter)
+	{
+		m_pCharacter->SetClass(newClass);
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "choose_class player='%s' class='%d'", Server()->ClientName(m_ClientID), newClass);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+	
+	GameServer()->CountInfPlayers();
+}
+
+void CPlayer::StartInfection(bool force)
+{
+	if(!force && IsZombie())
+		return;
+	
+	
+	if(IsHuman())
+	{
+		m_InfectionTick = Server()->Tick();
+	}
+	
+	int c = GameServer()->m_pController->ChooseInfectedClass(this);
+	
+	SetClass(c);
+}
+
+bool CPlayer::IsZombie() const
+{
+	return (m_class > END_HUMANCLASS);
+}
+
+bool CPlayer::IsHuman() const
+{
+	return !(m_class > END_HUMANCLASS);
+}
+
+bool CPlayer::IsSpectator() const
+{
+	return m_Team == TEAM_SPECTATORS;
+}
+
+bool CPlayer::IsKnownClass(int c)
+{
+	return m_knownClass[c];
+}
+
+void CPlayer::OpenMapMenu(int Menu)
+{
+	m_MapMenu = Menu;
+	m_MapMenuTick = 0;
+}
+
+void CPlayer::CloseMapMenu()
+{
+	m_MapMenu = 0;
+	m_MapMenuTick = -1;
+}
+
+bool CPlayer::MapMenuClickable()
+{
+	return (m_MapMenu > 0 && (m_MapMenuTick > Server()->TickSpeed()/2));
 }

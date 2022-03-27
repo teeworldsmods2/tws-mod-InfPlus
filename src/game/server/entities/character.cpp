@@ -8,6 +8,7 @@
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
+#include <engine/server/mapconverter.h>
 
 //input count
 struct CInputCount
@@ -77,6 +78,11 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Alive = true;
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
+
+	if(GetClass() == HUMANCLASS_NONE)
+	{
+		OpenClassChooser();
+	}
 
 	return true;
 }
@@ -553,6 +559,84 @@ void CCharacter::Tick()
 
 	// Previnput
 	m_PrevInput = m_Input;
+
+	if(m_pPlayer->MapMenu() == 1)
+	{
+		if(GetClass() != HUMANCLASS_NONE)
+		{
+			m_pPlayer->CloseMapMenu();
+		}
+		else
+		{
+			vec2 CursorPos = vec2(m_Input.m_TargetX, m_Input.m_TargetY);
+			
+			bool Broadcast = false;
+
+			if(length(CursorPos) > 100.0f)
+			{
+				float Angle = 2.0f*pi+atan2(CursorPos.x, -CursorPos.y);
+				float AngleStep = 2.0f*pi/static_cast<float>(CMapConverter::NUM_MENUCLASS);
+				m_pPlayer->m_MapMenuItem = ((int)((Angle+AngleStep/2.0f)/AngleStep))%CMapConverter::NUM_MENUCLASS;
+				
+				switch(m_pPlayer->m_MapMenuItem)
+				{
+					case CMapConverter::MENUCLASS_LOOPER:
+						if(GameServer()->m_pController->IsChoosableClass(HUMANCLASS_LOOPER))
+						{
+							GameServer()->SendBroadcast("Looper", m_pPlayer->GetCID());
+							Broadcast = true;
+						}
+						break;
+					case CMapConverter::MENUCLASS_MEDIC:
+						if(GameServer()->m_pController->IsChoosableClass(HUMANCLASS_MEDIC))
+						{
+							GameServer()->SendBroadcast("Medic", m_pPlayer->GetCID());
+							Broadcast = true;
+						}
+						break;
+					case CMapConverter::MENUCLASS_HERO:
+						if(GameServer()->m_pController->IsChoosableClass(HUMANCLASS_HERO))
+						{
+							GameServer()->SendBroadcast("Hero", m_pPlayer->GetCID());
+							Broadcast = true;
+						}
+						break;
+				}
+			}
+			
+			if(!Broadcast)
+			{
+				m_pPlayer->m_MapMenuItem = -1;
+				GameServer()->SendBroadcast("Choose your class", m_pPlayer->GetCID());
+			}
+			
+			if(m_Input.m_Fire&1 && m_pPlayer->m_MapMenuItem >= 0)
+			{
+				bool Bonus = false;
+				
+				int NewClass = -1;
+				switch(m_pPlayer->m_MapMenuItem)
+				{
+					case CMapConverter::MENUCLASS_MEDIC:
+						NewClass = HUMANCLASS_MEDIC;
+						break;
+					case CMapConverter::MENUCLASS_HERO:
+						NewClass = HUMANCLASS_HERO;
+						break;
+					case CMapConverter::MENUCLASS_LOOPER:
+						NewClass = HUMANCLASS_LOOPER;
+						break;
+				}
+				
+				if(NewClass >= 0 && GameServer()->m_pController->IsChoosableClass(NewClass))
+				{
+					m_pPlayer->m_MapMenuItem = 0;
+					m_pPlayer->SetClass(NewClass);
+				}
+			}
+		}
+	}
+
 	return;
 }
 
@@ -863,4 +947,33 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+}
+
+void CCharacter::OpenClassChooser()
+{
+	m_pPlayer->OpenMapMenu(1);
+}
+
+int CCharacter::GetClass()
+{
+	if(!m_pPlayer)
+		return HUMANCLASS_NONE;
+	else
+		return m_pPlayer->GetClass();
+}
+
+void CCharacter::SetClass(int ClassChoosed)
+{
+	m_QueuedWeapon = -1;	
+	GameServer()->CreatePlayerSpawn(m_Pos);
+}
+
+bool CCharacter::IsZombie() const
+{
+	return m_pPlayer->IsZombie();
+}
+
+bool CCharacter::IsHuman() const
+{
+	return m_pPlayer->IsHuman();
 }

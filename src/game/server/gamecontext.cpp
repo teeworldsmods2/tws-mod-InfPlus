@@ -1815,3 +1815,30 @@ const char *CGameContext::Version() { return GAME_VERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
+
+void CGameContext::CountInfPlayers()
+{
+	int humanCounter = 0;
+	int zombieCounter = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (!m_apPlayers[i])
+			continue;
+		if (m_apPlayers[i]->IsHuman())
+			humanCounter++;
+		else if (m_apPlayers[i]->IsZombie())
+			zombieCounter++;
+	}
+	m_NbHumans = humanCounter;
+	m_NbZombies = zombieCounter;	
+}
+
+int CGameContext::GetHumanCount()
+{
+	return m_NbHumans;
+}
+
+int CGameContext::GetZombieCount()
+{
+	return m_NbZombies;
+}

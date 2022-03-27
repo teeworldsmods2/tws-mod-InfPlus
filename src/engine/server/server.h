@@ -4,7 +4,7 @@
 #define ENGINE_SERVER_SERVER_H
 
 #include <engine/server.h>
-
+#include <game/server/classes.h>
 
 class CSnapIDPool
 {
@@ -250,6 +250,10 @@ public:
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage);
 	virtual int* GetIdMap(int ClientID);
 	virtual void SetCustClt(int ClientID);
+	virtual int GetTimeShiftUnit() const { return m_TimeShiftUnit; } //In ms
+private:
+	int m_TimeShiftUnit;
+
 };
 
 #endif

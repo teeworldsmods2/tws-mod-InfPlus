@@ -15,7 +15,7 @@ public:
 	union { T y,v; };
 
 	vector2_base() {}
-	vector2_base(T nx, T ny)
+	vector2_base(float nx, float ny)
 	{
 		x = nx;
 		y = ny;
@@ -63,6 +63,14 @@ inline T dot(const vector2_base<T> a, const vector2_base<T> &b)
 }
 
 template<typename T>
+inline vector2_base<T> rotate(const vector2_base<T> &a, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	return vector2_base<T>((T)(c*a.x - s*a.y), (T)(s*a.x + c*a.y));
+}
+
+template<typename T>
 inline vector2_base<T> normalize(const vector2_base<T> &v)
 {
 	T l = (T)(1.0f/sqrtf(v.x*v.x + v.y*v.y));
@@ -98,7 +106,7 @@ public:
 	union { T z,b,v,l; };
 
 	vector3_base() {}
-	vector3_base(T nx, T ny, T nz)
+	vector3_base(float nx, float ny, float nz)
 	{
 		x = nx;
 		y = ny;
@@ -177,7 +185,7 @@ public:
 	union { T w,a; };
 
 	vector4_base() {}
-	vector4_base(T nx, T ny, T nz, T nw)
+	vector4_base(float nx, float ny, float nz, float nw)
 	{
 		x = nx;
 		y = ny;

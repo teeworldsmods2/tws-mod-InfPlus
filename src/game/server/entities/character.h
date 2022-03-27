@@ -64,6 +64,13 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
+	void OpenClassChooser();
+	int GetClass();
+
+	void SetClass(int ClassChoosed);
+	bool IsZombie() const;
+	bool IsHuman() const;
+
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;

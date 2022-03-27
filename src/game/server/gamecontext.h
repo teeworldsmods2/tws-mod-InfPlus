@@ -17,6 +17,8 @@
 #include "gameworld.h"
 #include "player.h"
 
+#include <game/server/classes.h>
+
 #ifdef _MSC_VER
 typedef __int32 int32_t;
 typedef unsigned __int32 uint32_t;
@@ -201,6 +203,15 @@ public:
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
+
+public:
+	void CountInfPlayers();
+	int GetHumanCount();
+	int GetZombieCount();
+	int m_NbActivePlayers;
+	int m_NbSpectators;
+	int m_NbHumans;
+	int m_NbZombies;
 };
 
 inline int64_t CmaskAll() { return -1LL; }

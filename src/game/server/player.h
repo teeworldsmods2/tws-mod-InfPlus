@@ -6,6 +6,7 @@
 // this include should perhaps be removed
 #include "entities/character.h"
 #include "gamecontext.h"
+#include <game/server/classes.h>
 
 // player object
 class CPlayer
@@ -37,6 +38,17 @@ public:
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
 
+	int GetClass();
+	void SetClassSkin(int newClass, int State = 0);
+	void SetClass(int newClass);
+	int GetOldClass();
+	void SetOldClass(int oldClass);
+	bool IsZombie() const;
+	bool IsHuman() const;
+	bool IsSpectator() const;
+	void StartInfection(bool force = false);
+	bool IsKnownClass(int c);
+
 	const char* GetLanguage();
 	void SetLanguage(const char* pLanguage);
 
@@ -52,8 +64,6 @@ public:
 
 	// used for spectator mode
 	int m_SpectatorID;
-
-	bool m_IsReady;
 
 	//
 	int m_Vote;
@@ -103,6 +113,19 @@ public:
 
 	int m_Authed;
 
+	bool m_knownClass[NB_PLAYERCLASS];
+
+	bool m_IsReady;
+	bool m_IsInGame;
+
+	int m_MapMenuItem;
+	int m_LastHumanClasses[2];
+	int m_InfectionTick;
+
+	int MapMenu() { return (m_Team != TEAM_SPECTATORS) ? m_MapMenu : 0; };
+	void OpenMapMenu(int Menu);
+	void CloseMapMenu();
+	bool MapMenuClickable();
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
@@ -123,8 +146,62 @@ private:
 
 	void HandleTuningParams(); //This function will send the new parameters if needed
 
+	int m_class;
+	int m_MapMenu;
+	int m_MapMenuTick;
+
 public:
 	CTuningParams* GetNextTuningParams() { return &m_NextTuningParams; };
+};
+
+enum
+{
+	PLAYERITER_ALL=0x0,
+	
+	PLAYERITER_COND_READY=0x1,
+	PLAYERITER_COND_SPEC=0x2,
+	PLAYERITER_COND_NOSPEC=0x4,
+	
+	PLAYERITER_INGAME = PLAYERITER_COND_READY | PLAYERITER_COND_NOSPEC,
+	PLAYERITER_SPECTATORS = PLAYERITER_COND_READY | PLAYERITER_COND_SPEC,
+};
+
+template<int FLAGS>
+class CPlayerIterator
+{
+private:
+	CPlayer** m_ppPlayers;
+	int m_ClientID;
+	
+public:
+	
+	CPlayerIterator(CPlayer** ppPlayers) :
+		m_ppPlayers(ppPlayers)
+	{
+		Reset();
+	}
+	
+	inline bool Next()
+	{
+		for(m_ClientID = m_ClientID+1; m_ClientID<MAX_CLIENTS; m_ClientID++)
+		{
+			CPlayer* pPlayer = Player();
+			
+			if(!pPlayer) continue;
+			if((FLAGS & PLAYERITER_COND_READY) && (!pPlayer->m_IsInGame)) continue;
+			if((FLAGS & PLAYERITER_COND_NOSPEC) && (pPlayer->GetTeam() == TEAM_SPECTATORS)) continue;
+			if((FLAGS & PLAYERITER_COND_SPEC) && (pPlayer->GetTeam() != TEAM_SPECTATORS)) continue;
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	inline void Reset() { m_ClientID = -1; }
+	
+	inline CPlayer* Player() { return m_ppPlayers[m_ClientID]; }
+	inline int ClientID() { return m_ClientID; }
 };
 
 #endif

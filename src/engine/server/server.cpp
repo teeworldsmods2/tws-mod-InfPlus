@@ -30,6 +30,7 @@
 #include "register.h"
 #include "server.h"
 
+#include <engine/server/mapconverter.h>
 #include <teeuniverses/components/localization.h>
 #include <fstream>
 #include <sstream>
@@ -1357,32 +1358,127 @@ int CServer::LoadMap(const char *pMapName)
 
 	if(!m_pMap->Load(aBuf))
 		return 0;
-
-	// stop recording when we change map
-	m_DemoRecorder.Stop();
-
-	// reinit snapshot ids
-	m_IDPool.TimeoutIDs();
-
-	// get the crc of the map
-	m_CurrentMapCrc = m_pMap->Crc();
-	char aBufMsg[256];
-	str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_CurrentMapCrc);
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBufMsg);
-
-	str_copy(m_aCurrentMap, pMapName, sizeof(m_aCurrentMap));
-	//map_set(df);
-
-	// load complete map into memory for download
+			
+/* INFECTION MODIFICATION START ***************************************/
+	//The map format of InfectionClass is different from the vanilla format.
+	//We need to convert the map to something that the client can use
+	//First, try to find if the client map is already generated
 	{
-		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
+		CDataFileReader dfServerMap;
+		dfServerMap.Open(Storage(), aBuf, IStorage::TYPE_ALL);
+		unsigned ServerMapCrc = dfServerMap.Crc();
+		dfServerMap.Close();
+		
+		char aClientMapName[256];
+		str_format(aClientMapName, sizeof(aClientMapName), "infpmaps/%s_%08x/tw06-highres.map", pMapName, ServerMapCrc);
+		
+		CMapConverter MapConverter(Storage(), m_pMap, Console());
+		if(!MapConverter.Load())
+			return 0;
+		
+		m_TimeShiftUnit = MapConverter.GetTimeShiftUnit();
+		
+		CDataFileReader dfClientMap;
+		//The map is already converted
+		if(dfClientMap.Open(Storage(), aClientMapName, IStorage::TYPE_ALL))
+		{
+			m_CurrentMapCrc = dfClientMap.Crc();
+			dfClientMap.Close();
+		}
+		//The map must be converted
+		else
+		{
+			char aClientMapDir[256];
+			str_format(aClientMapDir, sizeof(aClientMapDir), "infpmaps/%s_%08x", pMapName, ServerMapCrc);
+			
+			char aFullPath[512];
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, aClientMapDir, aFullPath, sizeof(aFullPath));
+			if(fs_makedir(aFullPath) != 0)
+			{
+				dbg_msg("infclass", "Can't create the directory '%s'", aClientMapDir);
+			}
+				
+			if(!MapConverter.CreateMap(aClientMapName))
+				return 0;
+			
+			CDataFileReader dfGeneratedMap;
+			dfGeneratedMap.Open(Storage(), aClientMapName, IStorage::TYPE_ALL);
+			m_CurrentMapCrc = dfGeneratedMap.Crc();
+			dfGeneratedMap.Close();
+		}
+	
+		char aBufMsg[128];
+		str_format(aBufMsg, sizeof(aBufMsg), "map crc is %08x, generated map crc is %08x", ServerMapCrc, m_CurrentMapCrc);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBufMsg);
+		
+		//Download the generated map in memory to send it to clients
+		IOHANDLE File = Storage()->OpenFile(aClientMapName, IOFLAG_READ, IStorage::TYPE_ALL);
 		m_CurrentMapSize = (int)io_length(File);
 		if(m_pCurrentMapData)
 			mem_free(m_pCurrentMapData);
 		m_pCurrentMapData = (unsigned char *)mem_alloc(m_CurrentMapSize, 1);
 		io_read(File, m_pCurrentMapData, m_CurrentMapSize);
 		io_close(File);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", "maps/infp_x_current.map loaded in memory");
 	}
+
+	// stop recording when we change map
+	m_DemoRecorder.Stop();
+	
+	// reinit snapshot ids
+	m_IDPool.TimeoutIDs();
+
+	str_copy(m_aCurrentMap, pMapName, sizeof(m_aCurrentMap));
+
+	//map_set(df);
+	
+	
+	{
+		g_Config.m_SvTimelimit = 5;
+		
+		//Open file
+		char MapInfoFilename[512];
+		str_format(MapInfoFilename, sizeof(MapInfoFilename), "maps/%s.mapinfo", pMapName);
+		IOHANDLE File = Storage()->OpenFile(MapInfoFilename, IOFLAG_READ, IStorage::TYPE_ALL);
+		if(File)
+		{
+			char MapInfoLine[512];
+			bool isEndOfFile = false;
+			while(!isEndOfFile)
+			{
+				isEndOfFile = true;
+				
+				//Load one line
+				int MapInfoLineLength = 0;
+				char c;
+				while(io_read(File, &c, 1))
+				{
+					isEndOfFile = false;
+					
+					if(c == '\n') break;
+					else
+					{
+						MapInfoLine[MapInfoLineLength] = c;
+						MapInfoLineLength++;
+					}
+				}
+				
+				MapInfoLine[MapInfoLineLength] = 0;
+				
+				//Get the key
+				if(str_comp_nocase_num(MapInfoLine, "timelimit ", 10) == 0)
+				{
+					g_Config.m_SvTimelimit = str_toint(MapInfoLine+10);
+				}
+			}
+		
+			io_close(File);
+		}
+		else
+			g_Config.m_SvTimelimit = 5;
+	}
+/* INFECTION MODIFICATION END *****************************************/
+	
 	return 1;
 }
 
