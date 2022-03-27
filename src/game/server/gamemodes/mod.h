@@ -13,7 +13,7 @@ public:
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 	virtual int ChooseHumanClass(const CPlayer *pPlayer) const;
-	virtual int ChooseInfectedClass(const CPlayer *pPlayer) const;
+	virtual int ChooseInfectedClass() const;
 	virtual bool IsChoosableClass(int PlayerClass);
 };
 #endif

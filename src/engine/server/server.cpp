@@ -563,7 +563,7 @@ int CServer::SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System)
 		{
 			// broadcast
 			int i;
-			for(i = 0; i < MAX_CLIENTS; i++)
+			for(i = 0; i < MAX_PLAYERS; i++)
 				if(m_aClients[i].m_State == CClient::STATE_INGAME)
 				{
 					Packet.m_ClientID = i;
@@ -596,7 +596,7 @@ void CServer::DoSnapshot()
 	}
 
 	// create snapshots for all clients
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// client must be ingame to recive snapshots
 		if(m_aClients[i].m_State != CClient::STATE_INGAME)
@@ -1143,7 +1143,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, bool Extended, int
 	// count the players
 	int MaxClients = m_NetServer.MaxClients();
 	int PlayerCount = 0, ClientCount = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -1232,7 +1232,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, bool Extended, int
 	int Skip = Offset;
 	int Take = ClientsPerPacket;
 
-	for(i = 0; i < MAX_CLIENTS; i++)
+	for(i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -1262,7 +1262,7 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, bool Extended, int
 
 void CServer::UpdateServerInfo()
 {
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -2001,4 +2001,24 @@ int main(int argc, const char **argv) // ignore_convention
 	delete pStorage;
 	delete pConfig;
 	return 0;
+}
+
+void CServer::InitClientBot(int ClientID)
+{
+	if (ClientID < MAX_NOBOT || ClientID > MAX_CLIENTS)
+		return;
+		
+	m_aClients[ClientID].m_State = CServer::CClient::STATE_INGAME;
+}
+
+void CServer::ResetBotInfo(int ClientID, int BotType, int BotSubType)
+{
+	if(BotType == ZOMBIECLASS_ZABY)
+		str_copy(m_aClients[ClientID].m_aName , "Zaby", MAX_NAME_LENGTH);
+
+	else if(BotType == ZOMBIECLASS_BOOMER)
+		str_copy(m_aClients[ClientID].m_aName , "Boomer", MAX_NAME_LENGTH);
+
+	else if(BotType == ZOMBIECLASS_HUNTER)
+		str_copy(m_aClients[ClientID].m_aName , "Hunter", MAX_NAME_LENGTH);
 }

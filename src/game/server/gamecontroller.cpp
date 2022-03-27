@@ -221,6 +221,10 @@ void IGameController::StartRound()
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags&GAMEFLAG_TEAMS);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+
+	int CurId=0;
+	for(int o=0;o<12;o++, CurId++)
+		GameServer()->CreateBot(CurId, ZOMBIECLASS_BOOMER);
 }
 
 void IGameController::ChangeMap(const char *pToMap)
@@ -363,9 +367,29 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	// default health
 	pChr->IncreaseHealth(10);
 
-	// give default weapons
-	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
+	if(!pChr->GetPlayer()->IsBot())
+	{
+		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_GUN, 10);
+		pChr->GiveWeapon(WEAPON_SHOTGUN, -1);
+		pChr->GiveWeapon(WEAPON_GRENADE, -1);
+		pChr->GiveWeapon(WEAPON_RIFLE, -1);
+	}
+	else if(pChr->GetPlayer()->GetBotType() == ZOMBIECLASS_ZABY)
+	{
+		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_GUN, 10);
+	}
+	else if(pChr->GetPlayer()->GetBotType() == ZOMBIECLASS_BOOMER)
+	{
+		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+	}
+	else if(pChr->GetPlayer()->GetBotType() == ZOMBIECLASS_HUNTER)
+	{
+		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+		pChr->GiveWeapon(WEAPON_GUN, 10);
+		pChr->GiveWeapon(WEAPON_SHOTGUN, -1);
+	}
 }
 
 void IGameController::DoWarmup(int Seconds)
@@ -522,7 +546,7 @@ void IGameController::Tick()
 	// check for inactive players
 	if(g_Config.m_SvInactiveKickTime > 0)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i = 0; i < MAX_PLAYERS; ++i)
 		{
 		#ifdef CONF_DEBUG
 			if(g_Config.m_DbgDummies)
@@ -556,11 +580,6 @@ void IGameController::Tick()
 								GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
 						}
 						break;
-					case 2:
-						{
-							// kick the player
-							Server()->Kick(i, "Kicked for inactivity");
-						}
 					}
 				}
 			}

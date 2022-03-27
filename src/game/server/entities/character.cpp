@@ -79,7 +79,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
 
-	if(GetClass() == HUMANCLASS_NONE)
+	if(GetClass() == HUMANCLASS_NONE && !pPlayer->IsBot())
 	{
 		OpenClassChooser();
 	}
@@ -250,6 +250,15 @@ void CCharacter::HandleWeaponSwitch()
 
 void CCharacter::FireWeapon()
 {
+	if(GetPlayer()->IsBot() && GetPlayer()->GetBotType() == ZOMBIECLASS_BOOMER && GetPlayer()->m_IsInGame)
+	{
+		GameServer()->CreateExplosion(vec2(m_Pos.x + 5, m_Pos.y + 5), m_pPlayer->GetCID(), WEAPON_GAME, false);
+		GameServer()->CreateExplosion(vec2(m_Pos.x - 5, m_Pos.y + 5), m_pPlayer->GetCID(), WEAPON_GAME, false);
+		GameServer()->CreateExplosion(vec2(m_Pos.x - 5, m_Pos.y - 5), m_pPlayer->GetCID(), WEAPON_GAME, false);
+		GameServer()->CreateExplosion(vec2(m_Pos.x + 5, m_Pos.y - 5), m_pPlayer->GetCID(), WEAPON_GAME, false);
+			
+		GetPlayer()->KillCharacter();
+	}
 	if(m_ReloadTimer != 0)
 		return;
 
@@ -448,13 +457,9 @@ void CCharacter::HandleWeapons()
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
-	if(m_aWeapons[Weapon].m_Ammo < g_pData->m_Weapons.m_aId[Weapon].m_Maxammo || !m_aWeapons[Weapon].m_Got)
-	{
-		m_aWeapons[Weapon].m_Got = true;
-		m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
-		return true;
-	}
-	return false;
+	m_aWeapons[Weapon].m_Got = true;
+	m_aWeapons[Weapon].m_Ammo = Ammo;
+	return true;
 }
 
 void CCharacter::GiveNinja()
@@ -910,7 +915,7 @@ void CCharacter::Snap(int SnappingClient)
 	// set emote
 	if (m_EmoteStop < Server()->Tick())
 	{
-		m_EmoteType = EMOTE_NORMAL;
+		m_EmoteType = EmoteNormal;
 		m_EmoteStop = -1;
 	}
 

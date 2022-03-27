@@ -126,6 +126,15 @@ public:
 	void OpenMapMenu(int Menu);
 	void CloseMapMenu();
 	bool MapMenuClickable();
+
+	bool IsBot() const { return m_Bot; }
+	int GetBotType() const { return m_BotType; }
+	int GetBotSubType() const { return m_BotSubType; }
+	void SetBotType(int BotType) { m_BotType = BotType; }
+	void SetBotSubType(int BotSubType) { m_BotSubType = BotSubType; }
+
+	bool m_BigBot;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
@@ -149,6 +158,10 @@ private:
 	int m_class;
 	int m_MapMenu;
 	int m_MapMenuTick;
+
+	bool m_Bot;
+	int m_BotType;
+	int m_BotSubType;
 
 public:
 	CTuningParams* GetNextTuningParams() { return &m_NextTuningParams; };

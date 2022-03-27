@@ -3,7 +3,9 @@
 #include <new>
 #include <engine/shared/config.h>
 #include "player.h"
-
+#include <game/server/entities/bots/zaby.h>
+#include <game/server/entities/bots/boomer.h>
+#include <game/server/entities/bots/hunter.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
@@ -29,6 +31,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_MapMenuItem = -1;
 	m_MapMenuTick = -1;
 	
+	m_Bot = (ClientID > MAX_PLAYERS);
+	m_BotType = -1;
+	m_BigBot = false;
+
 	m_PrevTuningParams = *pGameServer->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
@@ -347,7 +353,23 @@ void CPlayer::TryRespawn()
 		return;
 
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
+	if(IsBot() && GetBotType() == ZOMBIECLASS_ZABY)
+	{
+		GameServer()->UpdateBotInfo(m_ClientID);
+		m_pCharacter = new(m_ClientID) CZaby(&GameServer()->m_World);
+	}
+	else if(IsBot() && GetBotType() == ZOMBIECLASS_BOOMER)
+	{
+		GameServer()->UpdateBotInfo(m_ClientID);
+		m_pCharacter = new(m_ClientID) CBoomer(&GameServer()->m_World);
+	}
+	else if(IsBot() && GetBotType() == ZOMBIECLASS_HUNTER)
+	{
+		GameServer()->UpdateBotInfo(m_ClientID);
+		m_pCharacter = new(m_ClientID) CHunter(&GameServer()->m_World);
+	}
+	else
+		m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
 }
@@ -385,30 +407,6 @@ void CPlayer::SetClassSkin(int newClass, int State)
 		case HUMANCLASS_HERO:
 			m_TeeInfos.m_UseCustomColor = 0;
 			str_copy(m_TeeInfos.m_SkinName, "redstripe", sizeof(m_TeeInfos.m_SkinName));
-			break;
-		case ZOMBIECLASS_BOOMER:
-			m_TeeInfos.m_UseCustomColor = 1;
-			str_copy(m_TeeInfos.m_SkinName, "saddo", sizeof(m_TeeInfos.m_SkinName));
-			m_TeeInfos.m_ColorBody = 3866368;
-			m_TeeInfos.m_ColorFeet = 65414;
-			break;
-		case ZOMBIECLASS_HUNTER:
-			m_TeeInfos.m_UseCustomColor = 1;
-			str_copy(m_TeeInfos.m_SkinName, "warpaint", sizeof(m_TeeInfos.m_SkinName));
-			m_TeeInfos.m_ColorBody = 3866368;
-			m_TeeInfos.m_ColorFeet = 65414;
-			break;
-		case ZOMBIECLASS_BAT:
-			m_TeeInfos.m_UseCustomColor = 1;
-			str_copy(m_TeeInfos.m_SkinName, "limekitty", sizeof(m_TeeInfos.m_SkinName));
-			m_TeeInfos.m_ColorBody = 2866368;
-			m_TeeInfos.m_ColorFeet = 3866368;
-			break;
-		case ZOMBIECLASS_SPIDER:
-			m_TeeInfos.m_UseCustomColor = 1;
-			str_copy(m_TeeInfos.m_SkinName, "pinky", sizeof(m_TeeInfos.m_SkinName));
-			m_TeeInfos.m_ColorBody = 3866368;
-			m_TeeInfos.m_ColorFeet = 65414;
 			break;
 		default:
 			m_TeeInfos.m_UseCustomColor = 0;
@@ -467,7 +465,7 @@ void CPlayer::StartInfection(bool force)
 		m_InfectionTick = Server()->Tick();
 	}
 	
-	int c = GameServer()->m_pController->ChooseInfectedClass(this);
+	int c = GameServer()->m_pController->ChooseInfectedClass();
 	
 	SetClass(c);
 }

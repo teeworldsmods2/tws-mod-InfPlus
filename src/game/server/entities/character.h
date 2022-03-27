@@ -71,7 +71,6 @@ public:
 	bool IsZombie() const;
 	bool IsHuman() const;
 
-private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
 
@@ -138,6 +137,7 @@ private:
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
+	int EmoteNormal;
 };
 
 #endif

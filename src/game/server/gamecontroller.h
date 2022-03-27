@@ -157,7 +157,7 @@ public:
 	double GetTime();
 
 	virtual int ChooseHumanClass(const CPlayer* pPlayer) const = 0;
-	virtual int ChooseInfectedClass(const CPlayer* pPlayer) const = 0;
+	virtual int ChooseInfectedClass() const = 0;
 	virtual bool IsChoosableClass(int PlayerClass) = 0;
 };
 

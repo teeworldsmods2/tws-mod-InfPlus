@@ -16,7 +16,7 @@ CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
 {
 	// Exchange this to a string that identifies your game mode.
 	// DM, TDM and CTF are reserved for teeworlds original modes.
-	m_pGameType = "Zomb++";
+	m_pGameType = "ZodClass*";
 
 	//m_GameFlags = GAMEFLAG_TEAMS; // GAMEFLAG_TEAMS makes it a two-team gamemode
 }
@@ -24,7 +24,31 @@ CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
 void CGameControllerMOD::Tick()
 {
 	// this is the main part of the gamemode, this function is run every tick
+	// do warmup
+	if(!GameServer()->m_World.m_Paused && m_Warmup)
+	{
+		m_Warmup--;
+		if(!m_Warmup)
+			StartRound();
+	}
 
+	if(m_GameOverTick != -1)
+	{
+		// game over.. wait for restart
+		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+		{
+			CycleMap();
+			StartRound();
+			m_RoundCount++;
+		}
+	}
+	else if(GameServer()->m_World.m_Paused && m_UnpauseTimer)
+	{
+		--m_UnpauseTimer;
+		if(!m_UnpauseTimer)
+			GameServer()->m_World.m_Paused = false;
+	}
+	
 	IGameController::Tick();
 }
 
@@ -141,7 +165,26 @@ int CGameControllerMOD::ChooseHumanClass(const CPlayer *pPlayer) const
 
 }
 
-int CGameControllerMOD::ChooseInfectedClass(const CPlayer *pPlayer) const
+int CGameControllerMOD::ChooseInfectedClass() const
 {
+	int ZombieClass = rand()%NB_INFECTEDCLASS;
+	switch (ZombieClass)
+	{
+	case 1:
+		ZombieClass = ZOMBIECLASS_ZABY;
+		break;
 
+	case 2:
+		ZombieClass = ZOMBIECLASS_BOOMER;
+		break;
+
+	case 3:
+		ZombieClass = ZOMBIECLASS_HUNTER;
+		break;
+	
+	default:
+		ZombieClass = ZOMBIECLASS_ZABY;
+		break;
+	}
+	return ZombieClass;
 }

@@ -456,7 +456,7 @@ void CNetServer::OnTokenCtrlMsg(NETADDR &Addr, int ControlMsg, const CNetPacketC
 int CNetServer::GetClientSlot(const NETADDR &Addr)
 {
 	int Slot = -1;
-	for(int i = 0; i < MaxClients(); i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(m_aSlots[i].m_Connection.State() != NET_CONNSTATE_OFFLINE &&
 			m_aSlots[i].m_Connection.State() != NET_CONNSTATE_ERROR &&
@@ -562,8 +562,6 @@ int CNetServer::Send(CNetChunk *pChunk)
 	else
 	{
 		int Flags = 0;
-		dbg_assert(pChunk->m_ClientID >= 0, "errornous client id");
-		dbg_assert(pChunk->m_ClientID < MaxClients(), "errornous client id");
 
 		if(pChunk->m_Flags&NETSENDFLAG_VITAL)
 			Flags = NET_CHUNKFLAG_VITAL;
@@ -572,10 +570,6 @@ int CNetServer::Send(CNetChunk *pChunk)
 		{
 			if(pChunk->m_Flags&NETSENDFLAG_FLUSH)
 				m_aSlots[pChunk->m_ClientID].m_Connection.Flush();
-		}
-		else
-		{
-			Drop(pChunk->m_ClientID, "Error sending data");
 		}
 	}
 	return 0;

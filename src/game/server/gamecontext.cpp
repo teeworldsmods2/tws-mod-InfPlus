@@ -1842,3 +1842,48 @@ int CGameContext::GetZombieCount()
 {
 	return m_NbZombies;
 }
+
+void CGameContext::UpdateBotInfo(int ClientID)
+{
+	char NameSkin[32];
+	const int BotType = m_apPlayers[ClientID]->GetBotType();
+	const int BotSubType = m_apPlayers[ClientID]->GetBotSubType();
+
+	switch(BotType)
+	{
+		case ZOMBIECLASS_ZABY:
+			if(!BotSubType)	str_copy(NameSkin, "zombie2", sizeof(NameSkin));
+			break;
+		
+		case ZOMBIECLASS_BOOMER:
+			if(!BotSubType)	str_copy(NameSkin, "zombie1", sizeof(NameSkin));
+			break;
+
+		case ZOMBIECLASS_HUNTER:
+			if(!BotSubType)	str_copy(NameSkin, "zombie3", sizeof(NameSkin));
+			break;
+
+		default:
+			if(!BotSubType)	str_copy(NameSkin, "zombie2", sizeof(NameSkin));
+			break;
+	}
+	
+    Server()->ResetBotInfo(ClientID, BotType, BotSubType);
+    str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_SkinName, NameSkin, sizeof(m_apPlayers[ClientID]->m_TeeInfos.m_SkinName));
+    m_apPlayers[ClientID]->m_TeeInfos.m_UseCustomColor = false;
+    m_pController->OnPlayerInfoChange(m_apPlayers[ClientID]);
+}
+
+void CGameContext::CreateBot(int ClientID, int BotType, int BotSubType)
+{
+    int BotClientID = MAX_PLAYERS+ClientID+1;
+    if (m_apPlayers[BotClientID])
+		return;
+
+	m_apPlayers[BotClientID] = new(BotClientID) CPlayer(this, BotClientID, TEAM_RED);
+	m_apPlayers[BotClientID]->SetBotType(m_pController->ChooseInfectedClass());
+	//m_apPlayers[BotClientID]->SetBotType(BotType);
+	m_apPlayers[BotClientID]->SetBotSubType(BotSubType);
+	
+	Server()->InitClientBot(BotClientID);
+}
