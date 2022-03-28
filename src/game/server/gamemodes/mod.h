@@ -15,5 +15,6 @@ public:
 	virtual int ChooseHumanClass(const CPlayer *pPlayer) const;
 	virtual int ChooseInfectedClass() const;
 	virtual bool IsChoosableClass(int PlayerClass);
+	virtual void DoWincheck();
 };
 #endif

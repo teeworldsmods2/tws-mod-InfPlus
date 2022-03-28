@@ -16,8 +16,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_pServer = m_pGameServer->Server();
 	m_pGameType = "unknown";
 
-	//
-	DoWarmup(g_Config.m_SvWarmup);
+	// DoWarmup(g_Config.m_SvWarmup);
 	m_UnpauseTimer = 0;
 	m_GameOverTick = -1;
 	m_SuddenDeath = 0;
@@ -325,28 +324,14 @@ void IGameController::PostReset()
 
 void IGameController::OnPlayerInfoChange(class CPlayer *pP)
 {
-	const int aTeamColors[2] = {65387, 10223467};
-	if(IsTeamplay())
-	{
-		pP->m_TeeInfos.m_UseCustomColor = 1;
-		if(pP->GetTeam() >= TEAM_RED && pP->GetTeam() <= TEAM_BLUE)
-		{
-			pP->m_TeeInfos.m_ColorBody = aTeamColors[pP->GetTeam()];
-			pP->m_TeeInfos.m_ColorFeet = aTeamColors[pP->GetTeam()];
-		}
-		else
-		{
-			pP->m_TeeInfos.m_ColorBody = 12895054;
-			pP->m_TeeInfos.m_ColorFeet = 12895054;
-		}
-	}
+	return;
 }
 
 
 int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
 	// do scoreing
-	if(!pKiller || Weapon == WEAPON_GAME)
+	if(!pKiller || Weapon == WEAPON_GAME || pKiller->IsBot())
 		return 0;
 	if(pKiller == pVictim->GetPlayer())
 		pVictim->GetPlayer()->m_Score--; // suicide
@@ -427,16 +412,14 @@ void IGameController::TogglePause()
 bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
 {
 	if(ClientID1 == ClientID2)
+		return true;
+
+
+	if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
 		return false;
 
-	if(IsTeamplay())
-	{
-		if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
-			return false;
-
-		if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
-			return true;
-	}
+	if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
+		return true;
 
 	return false;
 }

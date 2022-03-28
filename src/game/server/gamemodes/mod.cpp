@@ -16,16 +16,18 @@ CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
 {
 	// Exchange this to a string that identifies your game mode.
 	// DM, TDM and CTF are reserved for teeworlds original modes.
-	m_pGameType = "ZodClass*";
+	m_pGameType = "ZodClass++";
 
-	//m_GameFlags = GAMEFLAG_TEAMS; // GAMEFLAG_TEAMS makes it a two-team gamemode
+	m_GameFlags = GAMEFLAG_FLAGS;
 }
 
 void CGameControllerMOD::Tick()
 {
 	// this is the main part of the gamemode, this function is run every tick
 	// do warmup
-	if(!GameServer()->m_World.m_Paused && m_Warmup)
+	if(GameServer()->GetHumanCount() >= 2 && !m_RoundStartTick && !m_Warmup)
+		DoWarmup(g_Config.m_SvWarmup);
+	if(!GameServer()->m_World.m_Paused && m_Warmup && GameServer()->m_NbHumans >= 2)
 	{
 		m_Warmup--;
 		if(!m_Warmup)
@@ -62,8 +64,6 @@ void CGameControllerMOD::Snap(int SnappingClient)
 	pGameInfoObj->m_GameStateFlags = 0;
 	if(m_GameOverTick != -1)
 		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_GAMEOVER;
-	if(m_SuddenDeath)
-		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_SUDDENDEATH;
 	if(GameServer()->m_World.m_Paused)
 		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_PAUSED;
 	pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
@@ -187,4 +187,31 @@ int CGameControllerMOD::ChooseInfectedClass() const
 		break;
 	}
 	return ZombieClass;
+}
+
+void CGameControllerMOD::DoWincheck()
+{
+	if(!m_Warmup && m_GameOverTick == -1)
+	{	
+		int Topscore = 0;
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			if(GameServer()->m_apPlayers[i])
+			{
+					Topscore = GameServer()->m_apPlayers[i]->m_Score += Topscore;
+			}
+		}
+		if(Topscore >= g_Config.m_ZcLessKill)
+		{
+			EndRound();
+			GameServer()->SendChatTarget(-1, _("Humans won the game!"));
+			GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+		}
+		else
+		{
+			EndRound();
+			GameServer()->SendChatTarget(-1, _("Zombies won the game..."));
+			GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
+		}
+	}
 }

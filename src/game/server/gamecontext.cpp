@@ -306,11 +306,42 @@ void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
 }
 
 
-void CGameContext::SendBroadcast(const char *pText, int ClientID)
+void CGameContext::SendBroadcast(const char *pText, int ClientID, ...)
 {
-	CNetMsg_Sv_Broadcast Msg;
-	Msg.m_pMessage = pText;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	int Start = (ClientID < 0 ? 0 : ClientID);
+	int End = (ClientID < 0 ? MAX_CLIENTS : ClientID+1);
+	char aBuf[256];
+	
+	dynamic_string Buffer;
+	
+	va_list VarArgs;
+	va_start(VarArgs, pText);
+	
+	// only for server demo record
+	if(ClientID < 0)
+	{
+		CNetMsg_Sv_Broadcast Msg;
+		Server()->Localization()->Format_VL(Buffer, "en", pText, VarArgs);
+		Msg.m_pMessage = Buffer.buffer();
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
+	}
+
+	for(int i = Start; i < End; i++)
+	{
+		if(m_apPlayers[i])
+		{
+			Buffer.clear();
+			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
+			str_format(aBuf, sizeof(aBuf), "Survival conditions: Kill %d Zombies.", g_Config.m_ZcLessKill);
+			Buffer.append("\n====== ----- ======\n");
+			Buffer.append(aBuf);
+			CNetMsg_Sv_Broadcast Msg;
+			Msg.m_pMessage = Buffer.buffer();
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+		}
+	}
+	
+	va_end(VarArgs);
 }
 
 //
@@ -600,6 +631,8 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 
 	(void)m_pController->CheckTeamBalance();
 	m_VoteUpdate = true;
+
+	CountInfPlayers();
 
 	// update spectator modes
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -1868,6 +1901,8 @@ void CGameContext::UpdateBotInfo(int ClientID)
 			break;
 	}
 	
+	m_apPlayers[ClientID]->m_TeeInfos.m_ColorBody = 3866368;
+	m_apPlayers[ClientID]->m_TeeInfos.m_ColorFeet = 65414;
     Server()->ResetBotInfo(ClientID, BotType, BotSubType);
     str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_SkinName, NameSkin, sizeof(m_apPlayers[ClientID]->m_TeeInfos.m_SkinName));
     m_apPlayers[ClientID]->m_TeeInfos.m_UseCustomColor = false;
@@ -1886,4 +1921,20 @@ void CGameContext::CreateBot(int ClientID, int BotType, int BotSubType)
 	m_apPlayers[BotClientID]->SetBotSubType(BotSubType);
 	
 	Server()->InitClientBot(BotClientID);
+}
+
+void CGameContext::OnZombieDie(int BotCID)
+{
+	if(m_apPlayers[BotCID] && m_apPlayers[BotCID]->GetCharacter())
+		m_apPlayers[BotCID]->DeleteCharacter();
+	if(m_apPlayers[BotCID])
+		delete m_apPlayers[BotCID];
+	m_apPlayers[BotCID] = 0;
+
+	// update spectator modes
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == BotCID)
+			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+	}
 }

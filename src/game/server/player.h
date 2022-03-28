@@ -22,7 +22,12 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
-	int GetTeam() const { return m_Team; };
+	int GetTeam() const {
+		if(IsBot())
+			return 1;
+		else
+			return 0;
+	};
 	int GetCID() const { return m_ClientID; };
 
 	void Tick();
@@ -135,6 +140,7 @@ public:
 
 	bool m_BigBot;
 
+	void DeleteCharacter();
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
