@@ -334,7 +334,7 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID, ...)
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
 			str_format(aBuf, sizeof(aBuf), "Survival conditions: Kill %d Zombies.", g_Config.m_ZcLessKill);
 			Buffer.append("\n====== ----- ======\n");
-			Buffer.append(aBuf);
+			Server()->Localization()->Format(Buffer, m_apPlayers[i]->GetLanguage(), "Survival conditions: Kill {int:ts} Zombies.", "ts", &g_Config.m_ZcLessKill-Topscore, NULL);
 			CNetMsg_Sv_Broadcast Msg;
 			Msg.m_pMessage = Buffer.buffer();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
@@ -1925,16 +1925,4 @@ void CGameContext::CreateBot(int ClientID, int BotType, int BotSubType)
 
 void CGameContext::OnZombieDie(int BotCID)
 {
-	if(m_apPlayers[BotCID] && m_apPlayers[BotCID]->GetCharacter())
-		m_apPlayers[BotCID]->DeleteCharacter();
-	if(m_apPlayers[BotCID])
-		delete m_apPlayers[BotCID];
-	m_apPlayers[BotCID] = 0;
-
-	// update spectator modes
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == BotCID)
-			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
-	}
 }

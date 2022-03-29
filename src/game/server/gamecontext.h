@@ -216,6 +216,7 @@ public:
 
 	// Hello, i don't want to write it xD.
 	void OnZombieDie(int BotCID);
+	int Topscore;
 };
 
 inline int64_t CmaskAll() { return -1LL; }

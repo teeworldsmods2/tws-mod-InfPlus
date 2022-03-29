@@ -1,35 +1,27 @@
 Update logs:
 ======
 
-2022.3.20.
+2022.3.27.
 ====
 Start programming
 
-
-2022.3.23.
-====
 Teeworlds-mods2!
 
-
-2022.3.20-25.
-====
 tw06mod-localization, tw06mod-harmony, tw06mod-botai.
 
+Create Repo tws-mod-InfPlus
 
-2022.3.26.
-====
 MapConverter by Great Necropotame.
 
-
-2022.3.27.
-====
 Zods add.
-
 
 2022.3.28.
 ====
 The playing method has been determined!
 
+2022.3.29.
+====
+Hide bots in Scoreboard.
 
 
 

@@ -50,7 +50,6 @@ void CGameControllerMOD::Tick()
 		if(!m_UnpauseTimer)
 			GameServer()->m_World.m_Paused = false;
 	}
-	
 	IGameController::Tick();
 }
 
@@ -191,7 +190,7 @@ int CGameControllerMOD::ChooseInfectedClass() const
 
 void CGameControllerMOD::DoWincheck()
 {
-	if(!m_Warmup && m_GameOverTick == -1)
+	if(!m_Warmup && m_GameOverTick && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60)
 	{	
 		int Topscore = 0;
 		for(int i = 0; i < MAX_PLAYERS; i++)
@@ -213,5 +212,6 @@ void CGameControllerMOD::DoWincheck()
 			GameServer()->SendChatTarget(-1, _("Zombies won the game..."));
 			GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
 		}
+		GameServer()->Topscore = Topscore;
 	}
 }

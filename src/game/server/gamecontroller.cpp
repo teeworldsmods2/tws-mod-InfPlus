@@ -16,7 +16,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_pServer = m_pGameServer->Server();
 	m_pGameType = "unknown";
 
-	// DoWarmup(g_Config.m_SvWarmup);
+	DoWarmup(g_Config.m_SvWarmup);
 	m_UnpauseTimer = 0;
 	m_GameOverTick = -1;
 	m_SuddenDeath = 0;
@@ -222,7 +222,7 @@ void IGameController::StartRound()
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	int CurId=0;
-	for(int o=0;o<12;o++, CurId++)
+	for(int o=0;o<31;o++, CurId++)
 		GameServer()->CreateBot(CurId, ZOMBIECLASS_BOOMER);
 }
 
@@ -442,14 +442,6 @@ bool IGameController::CanBeMovedOnBalance(int ClientID)
 
 void IGameController::Tick()
 {
-	// do warmup
-	if(!GameServer()->m_World.m_Paused && m_Warmup)
-	{
-		m_Warmup--;
-		if(!m_Warmup)
-			StartRound();
-	}
-
 	if(m_GameOverTick != -1)
 	{
 		// game over.. wait for restart
@@ -584,6 +576,8 @@ void IGameController::Snap(int SnappingClient)
 	if(!pGameInfoObj)
 		return;
 
+	if(SnappingClient >= MAX_PLAYERS)
+		return;
 	pGameInfoObj->m_GameFlags = m_GameFlags;
 	pGameInfoObj->m_GameStateFlags = 0;
 	if(m_GameOverTick != -1)

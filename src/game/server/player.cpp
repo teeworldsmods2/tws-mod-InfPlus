@@ -44,6 +44,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	    idMap[i] = -1;
 	}
 	idMap[0] = ClientID;
+
+	m_class = HUMANCLASS_NONE;
 }
 
 CPlayer::~CPlayer()
@@ -186,10 +188,15 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = id;
 	if(IsBot())
+	{
 		pPlayerInfo->m_Score = -255;
+		pPlayerInfo->m_Team = 10;
+	}
 	else
+	{
 		pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = m_Team;
+		pPlayerInfo->m_Team = m_Team;
+	}
 
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;
