@@ -763,6 +763,9 @@ void CMapConverter::Finalize()
 						vec2 Pos = m_MenuPosition+rotate(vec2(MenuRadius, 0.0f), MenuAngleStart+MenuAngleStep*i);
 						switch(i)
 						{
+							case MENUCLASS_RANDOM:
+								AddTeeLayer("TRUE MAN", LooperImageID, Pos, 64.0f, m_NumEnvs-1, true);
+								break;
 							case MENUCLASS_LOOPER:
 								AddTeeLayer("Looper", LooperImageID, Pos, 64.0f, m_NumEnvs-1);
 								break;

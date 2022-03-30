@@ -35,6 +35,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_BotType = -1;
 	m_BigBot = false;
 
+	m_IsInGame = false;
+	
 	m_PrevTuningParams = *pGameServer->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
@@ -172,8 +174,10 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
+	dynamic_string Buffer;
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
+	Server()->Localization()->Format(Buffer, GetLanguage(), Server()->ClientClan(m_ClientID));
+	StrToInts(&pClientInfo->m_Clan0, 3, Buffer.buffer());
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_SkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
@@ -409,19 +413,25 @@ void CPlayer::SetClassSkin(int newClass, int State)
 			str_copy(m_TeeInfos.m_SkinName, "bluekitty", sizeof(m_TeeInfos.m_SkinName));
 			m_TeeInfos.m_ColorBody = 255;
 			m_TeeInfos.m_ColorFeet = 0;
+			Server()->SetClientClan(GetCID(), "Looper");
 			break;
 		case HUMANCLASS_MEDIC:
 			m_TeeInfos.m_UseCustomColor = 0;
 			str_copy(m_TeeInfos.m_SkinName, "twinbop", sizeof(m_TeeInfos.m_SkinName));
+			Server()->SetClientClan(GetCID(), "Medic");
 			break;
 		case HUMANCLASS_HERO:
 			m_TeeInfos.m_UseCustomColor = 0;
 			str_copy(m_TeeInfos.m_SkinName, "redstripe", sizeof(m_TeeInfos.m_SkinName));
+			Server()->SetClientClan(GetCID(), "Hero");
 			break;
+		case HUMANCLASS_TRUEMAN:
+			Server()->SetClientClan(GetCID(), "Self");
+
 		default:
 			m_TeeInfos.m_UseCustomColor = 0;
 			str_copy(m_TeeInfos.m_SkinName, "default", sizeof(m_TeeInfos.m_SkinName));
-			Server()->SetClientClan(GetCID(), "");
+			Server()->SetClientClan(GetCID(), "SB");
 	}
 }
 

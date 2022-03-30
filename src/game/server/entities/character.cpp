@@ -585,6 +585,13 @@ void CCharacter::Tick()
 				
 				switch(m_pPlayer->m_MapMenuItem)
 				{
+					case CMapConverter::MENUCLASS_RANDOM:
+						if(GameServer()->m_pController->IsChoosableClass(HUMANCLASS_TRUEMAN))
+						{
+							GameServer()->SendBroadcast("You self", m_pPlayer->GetCID());
+							Broadcast = true;
+						}
+						break;
 					case CMapConverter::MENUCLASS_LOOPER:
 						if(GameServer()->m_pController->IsChoosableClass(HUMANCLASS_LOOPER))
 						{
@@ -622,6 +629,9 @@ void CCharacter::Tick()
 				int NewClass = -1;
 				switch(m_pPlayer->m_MapMenuItem)
 				{
+					case CMapConverter::MENUCLASS_RANDOM:
+						NewClass = HUMANCLASS_TRUEMAN;
+						break;
 					case CMapConverter::MENUCLASS_MEDIC:
 						NewClass = HUMANCLASS_MEDIC;
 						break;

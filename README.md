@@ -23,6 +23,10 @@ The playing method has been determined!
 ====
 Hide bots in Scoreboard.
 
+2022.3.30.
+====
+New class: TRUE MAN, Translate player clan.
+
 
 
 

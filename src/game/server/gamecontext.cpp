@@ -333,7 +333,7 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID, ...)
 			Buffer.clear();
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
 			str_format(aBuf, sizeof(aBuf), "Survival conditions: Kill %d Zombies.", g_Config.m_ZcLessKill);
-			Buffer.append("\n====== ----- ======\n");
+			Buffer.append("\n========= -------- =========\n");
 			Server()->Localization()->Format(Buffer, m_apPlayers[i]->GetLanguage(), "Survival conditions: Kill {int:ts} Zombies.", "ts", &g_Config.m_ZcLessKill-Topscore, NULL);
 			CNetMsg_Sv_Broadcast Msg;
 			Msg.m_pMessage = Buffer.buffer();

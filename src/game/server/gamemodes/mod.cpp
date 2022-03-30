@@ -27,6 +27,8 @@ void CGameControllerMOD::Tick()
 	// do warmup
 	if(GameServer()->GetHumanCount() >= 2 && !m_RoundStartTick && !m_Warmup)
 		DoWarmup(g_Config.m_SvWarmup);
+	else
+		m_Warmup = 0;
 	if(!GameServer()->m_World.m_Paused && m_Warmup && GameServer()->m_NbHumans >= 2)
 	{
 		m_Warmup--;
@@ -150,6 +152,7 @@ bool CGameControllerMOD::IsChoosableClass(int PlayerClass)
 				nbHero++;
 				break;
 			case HUMANCLASS_LOOPER:
+			case HUMANCLASS_TRUEMAN:
 				nbDefender++;
 				break;
 		}
