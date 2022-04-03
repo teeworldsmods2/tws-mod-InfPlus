@@ -7,6 +7,6 @@
         {
             "key": "Available languages: {str:ListOfLanguage}",
             "value": "可用语言: {str:ListOfLanguage}"
-        },
+        }
     ]
 }

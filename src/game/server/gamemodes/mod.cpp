@@ -16,7 +16,7 @@ CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
 {
 	// Exchange this to a string that identifies your game mode.
 	// DM, TDM and CTF are reserved for teeworlds original modes.
-	m_pGameType = "ZodClass++";
+	m_pGameType = "ZdClass Catch";
 
 	m_GameFlags = GAMEFLAG_FLAGS;
 }
@@ -193,7 +193,7 @@ int CGameControllerMOD::ChooseInfectedClass() const
 
 void CGameControllerMOD::DoWincheck()
 {
-	if(!m_Warmup && m_GameOverTick && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60)
+	if(!m_Warmup && m_GameOverTick && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60 && GameServer()->GetHumanCount() >= 2)
 	{	
 		int Topscore = 0;
 		for(int i = 0; i < MAX_PLAYERS; i++)
